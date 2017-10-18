@@ -10,6 +10,7 @@ namespace MicroNetCore.AspNetCore.Proxy
     public sealed class Proxy : IProxy
     {
         private readonly ProxyOptions _proxyOptions;
+        private readonly ServiceOptions _serviceOptions;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="T:MicroNetCore.AspNetCore.Proxy.Proxy" /> class.
@@ -18,9 +19,14 @@ namespace MicroNetCore.AspNetCore.Proxy
         ///     <see cref="T:MicroNetCore.AspNetCore.Proxy.ProxyOptions" /> for resolving target
         ///     destinations.
         /// </param>
-        public Proxy(ProxyOptions proxyOptions)
+        /// <param name="serviceOptions">
+        ///     <see cref="T:MicroNetCore.AspNetCore.Proxy.ServiceOptions" /> for resolving target
+        ///     destinations.
+        /// </param>
+        public Proxy(ProxyOptions proxyOptions, ServiceOptions serviceOptions)
         {
             _proxyOptions = proxyOptions;
+            _serviceOptions = serviceOptions;
         }
 
         /// <summary>
@@ -39,12 +45,34 @@ namespace MicroNetCore.AspNetCore.Proxy
             {
                 if (!Match(path, key)) continue;
 
-                var replaced = requestPath.Replace(key.ToLower(), _proxyOptions[key].ToLower());
+                var proxyOption = _proxyOptions[key];
+                var serviceUrl = CreateReplacingUrl(proxyOption, requestPath);
+                var replaced = requestPath.Replace(key.ToLower(), serviceUrl.ToLower());
 
                 return replaced;
             }
 
             throw new KeyNotFoundException();
+        }
+
+        private string GetServiceName(string proxyOption)
+        {
+            var start = proxyOption.IndexOf('[');
+            var end = proxyOption.LastIndexOf(']');
+
+            return proxyOption.Substring(start + 1, end - start - 1);
+        }
+
+        private string CreateReplacingUrl(string proxyOption, string requestPath)
+        {
+            var localPath = requestPath.Split("/").LastOrDefault();
+            var serviceName = GetServiceName(proxyOption);
+            return GetSerivcePath(serviceName) + "/" + localPath;
+        }
+
+        private string GetSerivcePath(string serviceName)
+        {
+            return _serviceOptions[serviceName];
         }
 
         private static bool Match(string uri, string pattern)
