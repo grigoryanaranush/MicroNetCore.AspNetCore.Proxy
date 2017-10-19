@@ -10,6 +10,7 @@ namespace MicroNetCore.AspNetCore.Proxy
     public sealed class Proxy : IProxy
     {
         private readonly ProxyOptions _proxyOptions;
+        private readonly ServiceOptions _serviceOptions;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="T:MicroNetCore.AspNetCore.Proxy.Proxy" /> class.
@@ -18,9 +19,14 @@ namespace MicroNetCore.AspNetCore.Proxy
         ///     <see cref="T:MicroNetCore.AspNetCore.Proxy.ProxyOptions" /> for resolving target
         ///     destinations.
         /// </param>
-        public Proxy(ProxyOptions proxyOptions)
+        /// <param name="serviceOptions">
+        ///     <see cref="T:MicroNetCore.AspNetCore.Proxy.ServiceOptions" /> for resolving target
+        ///     destinations.
+        /// </param>
+        public Proxy(ProxyOptions proxyOptions, ServiceOptions serviceOptions)
         {
             _proxyOptions = proxyOptions;
+            _serviceOptions = serviceOptions;
         }
 
         /// <summary>
@@ -39,12 +45,30 @@ namespace MicroNetCore.AspNetCore.Proxy
             {
                 if (!Match(path, key)) continue;
 
-                var replaced = requestPath.Replace(key.ToLower(), _proxyOptions[key].ToLower());
+                var proxyUrl = _proxyOptions[key];
+                var serviceUrl = ReplaceServiceNameByUrl(proxyUrl, requestPath);
+                var replaced = requestPath.Replace(key, serviceUrl);
 
-                return replaced;
+                return replaced.ToLower();
             }
 
             throw new KeyNotFoundException();
+        }
+
+        private string ReplaceServiceNameByUrl(string proxyUrl, string requestPath)
+        {
+            var localPath = requestPath.Split("/").LastOrDefault();
+
+            return GetServicePath(proxyUrl) + "/" + localPath;
+        }
+
+        private string GetServicePath(string proxyUrl)
+        {
+            var start = proxyUrl.IndexOf('[');
+            var end = proxyUrl.IndexOf(']');
+            var serviceName = proxyUrl.Substring(start + 1, end - start - 1);
+
+            return _serviceOptions[serviceName];
         }
 
         private static bool Match(string uri, string pattern)

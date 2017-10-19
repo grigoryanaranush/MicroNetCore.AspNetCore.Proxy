@@ -16,15 +16,15 @@ namespace MicroNetCore.AspNetCore.Proxy.Middleware
     /// </summary>
     public sealed class ProxyMiddleware
     {
-        private readonly ILogger _logger;
-        private readonly RequestDelegate _next;
-        private readonly IProxy _proxy;
-
         private static readonly IEnumerable<string> IgnoreHeaders = new[]
         {
             HttpRequestHeader.Authorization.ToString(),
             HttpRequestHeader.Host.ToString()
         };
+
+        private readonly ILogger _logger;
+        private readonly RequestDelegate _next;
+        private readonly IProxy _proxy;
 
         /// <summary>
         ///     Initializes a new instance of the

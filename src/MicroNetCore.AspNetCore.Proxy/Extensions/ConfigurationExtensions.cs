@@ -30,6 +30,7 @@ namespace MicroNetCore.AspNetCore.Proxy.Extensions
             services.AddScoped<ProxyMiddleware>();
 
             services.AddScoped(s => configuration.GetSection(nameof(ProxyOptions)).Get<ProxyOptions>());
+            services.AddScoped(s => configuration.GetSection(nameof(ServiceOptions)).Get<ServiceOptions>());
             services.AddScoped<IProxy, Proxy>();
 
             return services;
