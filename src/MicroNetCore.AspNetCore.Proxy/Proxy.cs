@@ -45,33 +45,29 @@ namespace MicroNetCore.AspNetCore.Proxy
             {
                 if (!Match(path, key)) continue;
 
-                var proxyOption = _proxyOptions[key];
-                var serviceUrl = CreateReplacingUrl(proxyOption, requestPath);
-                var replaced = requestPath.Replace(key.ToLower(), serviceUrl.ToLower());
+                var proxyUrl = _proxyOptions[key];
+                var serviceUrl = ReplaceServiceNameByUrl(proxyUrl, requestPath);
+                var replaced = requestPath.Replace(key, serviceUrl);
 
-                return replaced;
+                return replaced.ToLower();
             }
 
             throw new KeyNotFoundException();
         }
 
-        private string GetServiceName(string proxyOption)
-        {
-            var start = proxyOption.IndexOf('[');
-            var end = proxyOption.LastIndexOf(']');
-
-            return proxyOption.Substring(start + 1, end - start - 1);
-        }
-
-        private string CreateReplacingUrl(string proxyOption, string requestPath)
+        private string ReplaceServiceNameByUrl(string proxyUrl, string requestPath)
         {
             var localPath = requestPath.Split("/").LastOrDefault();
-            var serviceName = GetServiceName(proxyOption);
-            return GetSerivcePath(serviceName) + "/" + localPath;
+
+            return GetServicePath(proxyUrl) + "/" + localPath;
         }
 
-        private string GetSerivcePath(string serviceName)
+        private string GetServicePath(string proxyUrl)
         {
+            var start = proxyUrl.IndexOf('[');
+            var end = proxyUrl.IndexOf(']');
+            var serviceName = proxyUrl.Substring(start + 1, end - start - 1);
+
             return _serviceOptions[serviceName];
         }
 
